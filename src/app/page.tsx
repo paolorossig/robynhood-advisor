@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { addDays } from 'date-fns'
-import { Search } from 'lucide-react'
+import { addDays, eachDayOfInterval, format } from 'date-fns'
+import { CalendarClockIcon, Search, X } from 'lucide-react'
 import { DateRange } from 'react-day-picker'
 
 import { DatePickerWithRange } from '@/components/date-range-picker'
@@ -93,11 +93,61 @@ const availableOptions = [
   },
 ]
 
+function Events({ options }: { options: typeof availableOptions }) {
+  return (
+    <div className="flex flex-col space-y-4">
+      {options.map((option) => (
+        <Card key={option.id} className="px-2 py-4">
+          <div className="flex space-x-2">
+            <picture>
+              <img
+                src={option.image}
+                alt={option.name}
+                className="h-20 w-20 overflow-hidden rounded-lg object-cover"
+              />
+            </picture>
+            <div className="grid flex-1 space-y-2 leading-none">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                {option.name}
+              </label>
+              <p className="text-sm">{option.description}</p>
+            </div>
+            <Button variant="outline" size="icon">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
 export default function Home() {
-  const [date, setDate] = useState<DateRange | undefined>({
+  const [stepIndex, setStepIndex] = useState(0)
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
     to: addDays(new Date(), 7),
   })
+
+  const allDays =
+    dateRange &&
+    dateRange.from &&
+    dateRange.to &&
+    eachDayOfInterval({
+      start: dateRange.from,
+      end: dateRange.to,
+    })
+
+  const dayWith1Event = allDays && Math.floor(Math.random() * allDays.length)
+  const dayWith2Events = allDays && Math.floor(Math.random() * allDays.length)
+
+  const previousIndex = () => {
+    setStepIndex((current) => (current ? current - 1 : 0))
+  }
+
+  const nextIndex = () => {
+    setStepIndex((current) => (current < 4 ? current + 1 : current))
+  }
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -106,75 +156,138 @@ export default function Home() {
     const place = val.place as HTMLInputElement
 
     console.log(place.value)
-    console.log(date)
+    console.log(dateRange)
+
+    nextIndex()
   }
 
   return (
     <main className="mx-auto max-w-md">
       <section className="space-y-4 px-2 py-6">
-        <Card className="px-3 py-4">
-          <form onSubmit={onSubmit} className="mx-auto max-w-[348px] space-y-3">
-            <input
-              name="place"
-              type="text"
-              placeholder="Search any place..."
-              className="ml-1 focus-visible:outline-none"
-              required
-            />
-            <div className="flex space-x-2">
-              <DatePickerWithRange dateRange={date} onSelection={setDate} />
-              <Button variant="outline" size="icon" type="submit">
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </form>
-        </Card>
+        {stepIndex >= 0 && (
+          <Card className="px-3 py-4">
+            <form
+              onSubmit={onSubmit}
+              className="mx-auto max-w-[348px] space-y-3"
+            >
+              <input
+                name="place"
+                type="text"
+                placeholder="Search any place..."
+                className="ml-1 focus-visible:outline-none"
+                required
+              />
+              <div className="flex space-x-2">
+                <DatePickerWithRange
+                  dateRange={dateRange}
+                  onSelection={setDateRange}
+                />
+                <Button variant="outline" size="icon" type="submit">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+            </form>
+          </Card>
+        )}
 
-        <Input type="text" placeholder="What kind of traveller are you?" />
+        {stepIndex === 1 && (
+          <Input type="text" placeholder="What kind of traveller are you?" />
+        )}
 
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-gray-700">
-              Available options:
-            </h3>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col space-y-6">
+        {stepIndex === 2 && (
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold text-gray-700">
+                Available options:
+              </h3>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col space-y-6">
+                {availableOptions.map((option) => {
+                  const optionKey = `option-${option.id}`
+
+                  return (
+                    <div key={optionKey} className="flex space-x-2">
+                      <Checkbox id={optionKey} />
+                      <div className="flex items-center space-x-2">
+                        <div className="grid flex-1 space-y-2 leading-none">
+                          <label
+                            htmlFor={optionKey}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {option.name}
+                          </label>
+                          <p className="text-sm">{option.description}</p>
+                        </div>
+                        <picture>
+                          <img
+                            src={option.image}
+                            alt={option.name}
+                            className="h-20 w-20 overflow-hidden rounded-lg object-cover"
+                          />
+                        </picture>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {stepIndex === 3 && (
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700">Offers:</h3>
+            <ul className="grid grid-cols-2 gap-3">
               {availableOptions.map((option) => {
                 const optionKey = `option-${option.id}`
-
                 return (
-                  <div key={optionKey} className="flex space-x-2">
-                    <Checkbox id={optionKey} />
-                    <div className="flex items-center space-x-2">
-                      <div className="grid flex-1 space-y-2 leading-none">
-                        <label
-                          htmlFor={optionKey}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                          {option.name}
-                        </label>
-                        <p className="text-sm">{option.description}</p>
-                      </div>
-                      <picture className="">
-                        <img
-                          src={option.image}
-                          alt={option.name}
-                          className="h-20 w-20 overflow-hidden rounded-lg object-cover"
-                        />
-                      </picture>
-                    </div>
-                  </div>
+                  <li key={optionKey}>
+                    <picture>
+                      <img
+                        src={option.image}
+                        alt={option.name}
+                        className="h-20 w-20 overflow-hidden rounded-lg object-cover"
+                      />
+                    </picture>
+                  </li>
                 )
               })}
-            </div>
-          </CardContent>
-        </Card>
+            </ul>
+          </div>
+        )}
 
-        <div className="text-end">
-          <Button type="submit">Submit</Button>
-        </div>
+        {stepIndex === 4 && (
+          <div>
+            <h3 className="mb-2 flex space-x-2 text-lg font-semibold text-gray-700">
+              <CalendarClockIcon className="h-6 w-6" />
+              <span>Itinerary:</span>
+            </h3>
+            {allDays?.map((day, index) => (
+              <>
+                <p key={day.toDateString()}>{format(day, 'EEEE dd')}</p>
+                <div className="border-l border-slate-200 pl-4">
+                  {index === dayWith2Events ? (
+                    <Events
+                      options={[availableOptions[0], availableOptions[1]]}
+                    />
+                  ) : index === dayWith1Event ? (
+                    <Events options={[availableOptions[2]]} />
+                  ) : (
+                    <p className="h-4"></p>
+                  )}
+                </div>
+              </>
+            ))}
+          </div>
+        )}
       </section>
+      {stepIndex > 0 && (
+        <div className="flex justify-between px-2 py-4">
+          <Button onClick={previousIndex}>Previous</Button>
+          <Button onClick={nextIndex}>Next</Button>
+        </div>
+      )}
     </main>
   )
 }
