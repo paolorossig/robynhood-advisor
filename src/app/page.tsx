@@ -189,14 +189,6 @@ function ConfirmationModal({
   )
 }
 
-// function ChatGPTForm() {
-//   const { messages, input, handleInputChange, handleSubmit } = useChat({
-//     initialMessages: [{ id: 'context-1', role: 'system', content: '' }],
-//   })
-
-//   return ()
-// }
-
 export default function Home() {
   const router = useRouter()
 
@@ -362,12 +354,15 @@ export default function Home() {
             <h3 className="text-lg font-semibold text-gray-700">
               Experiences:
             </h3>
-            <ul className="grid grid-cols-2 gap-3">
+            <ul className="my-4 grid grid-cols-2 gap-x-3 gap-y-5">
               {options.map((option) => {
                 const optionKey = `option-${option.id}`
                 return (
                   <>
-                    <li key={optionKey}>
+                    <li
+                      key={optionKey}
+                      className="flex flex-col text-center hover:animate-pulse"
+                    >
                       <picture className="grid place-content-center">
                         <img
                           src={option.image}
@@ -375,8 +370,17 @@ export default function Home() {
                           className="h-20 w-20 overflow-hidden rounded-lg object-cover"
                         />
                       </picture>
+                      <span className="text-sm font-bold text-gray-400">
+                        Proveedor
+                      </span>
+                      <span className="text-sm text-gray-700">
+                        {option.name}
+                      </span>
                     </li>
-                    <li key={optionKey + '-2'}>
+                    <li
+                      key={optionKey + '-2'}
+                      className="flex flex-col text-center hover:animate-pulse"
+                    >
                       <picture className="grid place-content-center">
                         <img
                           src={option.image}
@@ -384,6 +388,12 @@ export default function Home() {
                           className="h-20 w-20 overflow-hidden rounded-lg object-cover"
                         />
                       </picture>
+                      <span className="text-sm font-bold text-gray-400">
+                        Proveedor
+                      </span>
+                      <span className="text-sm text-gray-700">
+                        {option.name}
+                      </span>
                     </li>
                   </>
                 )
