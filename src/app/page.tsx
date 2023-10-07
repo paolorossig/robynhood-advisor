@@ -2,11 +2,13 @@
 
 import { useRouter } from 'next/navigation'
 import { MouseEventHandler, useState } from 'react'
+import { useChat } from 'ai/react'
 import { addDays, eachDayOfInterval, format } from 'date-fns'
-import { CalendarClockIcon, Search, X } from 'lucide-react'
+import { CalendarClockIcon, Search, Terminal, X } from 'lucide-react'
 import { DateRange } from 'react-day-picker'
 
 import { DatePickerWithRange } from '@/components/date-range-picker'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +21,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 
@@ -187,15 +189,39 @@ function ConfirmationModal({
   )
 }
 
+// function ChatGPTForm() {
+//   const { messages, input, handleInputChange, handleSubmit } = useChat({
+//     initialMessages: [{ id: 'context-1', role: 'system', content: '' }],
+//   })
+
+//   return ()
+// }
+
 export default function Home() {
   const router = useRouter()
 
   const [stepIndex, setStepIndex] = useState(0)
-  const [prompt, setPrompt] = useState('')
+  const [place, setPlace] = useState('')
   const [options, setOptions] = useState(availableOptions)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
     to: addDays(new Date(), 7),
+  })
+
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    initialMessages: [
+      {
+        id: 'context-1',
+        role: 'system',
+        content:
+          'You are a tourist agent, focused on recomending natural tourist places, you are against big travel agencies and you prefer ecotourism and help local comunnities. Be consice when you provide recommendations, no more than 20 words for each tourist place, and no more than 3 options.',
+      },
+      {
+        id: 'context-2',
+        role: 'user',
+        content: `I want to travel specifically to ${place}`,
+      },
+    ],
   })
 
   const allDays =
@@ -224,9 +250,11 @@ export default function Home() {
     e.preventDefault()
 
     const val = e.target as HTMLFormElement
-    const place = val.place as HTMLInputElement
+    const placeVal = val.place as HTMLInputElement
 
-    if (place.value.toLowerCase() === 'tarapoto') {
+    setPlace(placeVal.value)
+
+    if (placeVal.value.toLowerCase() === 'tarapoto') {
       setOptions(tarapotoOptions)
     }
 
@@ -263,58 +291,77 @@ export default function Home() {
         )}
 
         {stepIndex === 1 && (
-          <Input
-            type="text"
-            placeholder="What kind of traveller are you?"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-          />
+          <form
+            onSubmit={(e) => {
+              nextIndex()
+              handleSubmit(e)
+            }}
+          >
+            <Input
+              type="text"
+              placeholder="What kind of traveller are you?"
+              value={input}
+              onChange={handleInputChange}
+            />
+            <div className="flex justify-end px-2 py-4">
+              <Button type="submit">Generate options</Button>
+            </div>
+          </form>
         )}
 
         {stepIndex === 2 && (
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold text-gray-700">
-                Available options:
-              </h3>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col space-y-6">
-                {options.map((option) => {
-                  const optionKey = `option-${option.id}`
+          <div>
+            <Alert className="my-4">
+              <Terminal className="h-4 w-4" />
+              <AlertTitle>Your personal AI assistant:</AlertTitle>
+              <AlertDescription>
+                {messages
+                  .filter((m) => m.role === 'assistant')
+                  .map((m) => (
+                    <p key={m.id}>{m.content}</p>
+                  ))}
+              </AlertDescription>
+            </Alert>
+            <h3 className="text-lg font-semibold text-gray-700">
+              Available options:
+            </h3>
+            <div className="flex flex-col space-y-6">
+              {options.map((option) => {
+                const optionKey = `option-${option.id}`
 
-                  return (
-                    <div key={optionKey} className="flex space-x-2">
-                      <Checkbox id={optionKey} />
-                      <div className="flex items-center space-x-2">
-                        <div className="grid flex-1 space-y-2 leading-none">
-                          <label
-                            htmlFor={optionKey}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            {option.name}
-                          </label>
-                          <p className="text-sm">{option.description}</p>
-                        </div>
-                        <picture>
-                          <img
-                            src={option.image}
-                            alt={option.name}
-                            className="h-20 w-20 overflow-hidden rounded-lg object-cover"
-                          />
-                        </picture>
+                return (
+                  <Card key={optionKey} className="flex space-x-2 px-2 py-4">
+                    <Checkbox id={optionKey} />
+                    <div className="flex items-center space-x-2">
+                      <div className="grid flex-1 space-y-2 leading-none">
+                        <label
+                          htmlFor={optionKey}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {option.name}
+                        </label>
+                        <p className="text-sm">{option.description}</p>
                       </div>
+                      <picture>
+                        <img
+                          src={option.image}
+                          alt={option.name}
+                          className="h-20 w-20 overflow-hidden rounded-lg object-cover"
+                        />
+                      </picture>
                     </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                  </Card>
+                )
+              })}
+            </div>
+          </div>
         )}
 
         {stepIndex === 3 && (
           <div>
-            <h3 className="text-lg font-semibold text-gray-700">Offers:</h3>
+            <h3 className="text-lg font-semibold text-gray-700">
+              Experiences:
+            </h3>
             <ul className="grid grid-cols-2 gap-3">
               {options.map((option) => {
                 const optionKey = `option-${option.id}`
@@ -368,7 +415,7 @@ export default function Home() {
           </div>
         )}
       </section>
-      {stepIndex > 0 && (
+      {stepIndex > 1 && (
         <div className="flex justify-between px-2 py-4">
           <Button variant="outline" onClick={previousIndex}>
             Previous
