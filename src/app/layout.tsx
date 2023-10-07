@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 
 import Navbar from '@/components/layout/navbar'
+import { cn } from '@/lib/utils'
 
 import './globals.css'
 
@@ -20,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className="h-full">
+      <body className={cn(inter.className, 'h-full')}>
         <Navbar />
         {children}
       </body>

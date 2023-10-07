@@ -1,11 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { MouseEventHandler, useState } from 'react'
 import { addDays, eachDayOfInterval, format } from 'date-fns'
 import { CalendarClockIcon, Search, X } from 'lucide-react'
 import { DateRange } from 'react-day-picker'
 
 import { DatePickerWithRange } from '@/components/date-range-picker'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -93,6 +105,32 @@ const availableOptions = [
   },
 ]
 
+const tarapotoOptions = [
+  {
+    id: 10,
+    name: 'Lamas Community',
+    description:
+      'The Wayku Quechua Native Community, or also known as the Wayku Barrio Native Community, is located in the San Martín region, in Lamas, approximately 40 minutes from the city of Tarapoto by car.',
+    image: 'https://caaap.org.pe/wp-content/uploads/2020/08/ComunidadLamas.jpg',
+  },
+  {
+    id: 11,
+    name: 'Carpishuyaco Waterfall',
+    description:
+      'Tarapoto is a Peruvian city that has great charm, that is why many people go there in order to discover its attractions, one of them being the Carpishuyacu Waterfall; a well-known place thanks to the beauty it has and the great height of its fall.',
+    image:
+      'https://www.somosperu.org.pe/wp-content/uploads/2019/08/Catarata-de-Carpishuyacu-peru-tarapoto.jpg',
+  },
+  {
+    id: 12,
+    name: 'Gocta Waterfall',
+    description:
+      'Its more than 700 meters high make it one of the largest in the world. Its majesty and natural beauty, which cannot be found just like that, captivates all its visitors.',
+    image:
+      'https://www.peru.travel/Contenido/Atractivo/Imagen/es/11/1.2/Principal/Catarata%20de%20Gocta.jpg',
+  },
+]
+
 function Events({ options }: { options: typeof availableOptions }) {
   return (
     <div className="flex flex-col space-y-4">
@@ -122,8 +160,39 @@ function Events({ options }: { options: typeof availableOptions }) {
   )
 }
 
+function ConfirmationModal({
+  onClick,
+}: {
+  onClick: MouseEventHandler<HTMLButtonElement>
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button>Save</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Is your itinerary complete?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. Your itinerary can not be edited in
+            this MVP, please check your itinerary carefully.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onClick}>Continue</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
 export default function Home() {
+  const router = useRouter()
+
   const [stepIndex, setStepIndex] = useState(0)
+  const [prompt, setPrompt] = useState('')
+  const [options, setOptions] = useState(availableOptions)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
     to: addDays(new Date(), 7),
@@ -141,6 +210,8 @@ export default function Home() {
   const dayWith1Event = allDays && Math.floor(Math.random() * allDays.length)
   const dayWith2Events = allDays && Math.floor(Math.random() * allDays.length)
 
+  const finishDemo = () => router.push('/thanks')
+
   const previousIndex = () => {
     setStepIndex((current) => (current ? current - 1 : 0))
   }
@@ -155,8 +226,9 @@ export default function Home() {
     const val = e.target as HTMLFormElement
     const place = val.place as HTMLInputElement
 
-    console.log(place.value)
-    console.log(dateRange)
+    if (place.value.toLowerCase() === 'tarapoto') {
+      setOptions(tarapotoOptions)
+    }
 
     nextIndex()
   }
@@ -191,7 +263,12 @@ export default function Home() {
         )}
 
         {stepIndex === 1 && (
-          <Input type="text" placeholder="What kind of traveller are you?" />
+          <Input
+            type="text"
+            placeholder="What kind of traveller are you?"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+          />
         )}
 
         {stepIndex === 2 && (
@@ -203,7 +280,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col space-y-6">
-                {availableOptions.map((option) => {
+                {options.map((option) => {
                   const optionKey = `option-${option.id}`
 
                   return (
@@ -239,18 +316,29 @@ export default function Home() {
           <div>
             <h3 className="text-lg font-semibold text-gray-700">Offers:</h3>
             <ul className="grid grid-cols-2 gap-3">
-              {availableOptions.map((option) => {
+              {options.map((option) => {
                 const optionKey = `option-${option.id}`
                 return (
-                  <li key={optionKey}>
-                    <picture>
-                      <img
-                        src={option.image}
-                        alt={option.name}
-                        className="h-20 w-20 overflow-hidden rounded-lg object-cover"
-                      />
-                    </picture>
-                  </li>
+                  <>
+                    <li key={optionKey}>
+                      <picture className="grid place-content-center">
+                        <img
+                          src={option.image}
+                          alt={option.name}
+                          className="h-20 w-20 overflow-hidden rounded-lg object-cover"
+                        />
+                      </picture>
+                    </li>
+                    <li key={optionKey + '-2'}>
+                      <picture className="grid place-content-center">
+                        <img
+                          src={option.image}
+                          alt={option.name}
+                          className="h-20 w-20 overflow-hidden rounded-lg object-cover"
+                        />
+                      </picture>
+                    </li>
+                  </>
                 )
               })}
             </ul>
@@ -261,20 +349,18 @@ export default function Home() {
           <div>
             <h3 className="mb-2 flex space-x-2 text-lg font-semibold text-gray-700">
               <CalendarClockIcon className="h-6 w-6" />
-              <span>Itinerary:</span>
+              <span>My Itinerary:</span>
             </h3>
             {allDays?.map((day, index) => (
               <>
                 <p key={day.toDateString()}>{format(day, 'EEEE dd')}</p>
-                <div className="border-l border-slate-200 pl-4">
+                <div className="border-l border-dashed border-slate-200 pl-4">
                   {index === dayWith2Events ? (
-                    <Events
-                      options={[availableOptions[0], availableOptions[1]]}
-                    />
+                    <Events options={[options[0], options[1]]} />
                   ) : index === dayWith1Event ? (
-                    <Events options={[availableOptions[2]]} />
+                    <Events options={[options[2]]} />
                   ) : (
-                    <p className="h-4"></p>
+                    <p className="h-8"></p>
                   )}
                 </div>
               </>
@@ -284,8 +370,14 @@ export default function Home() {
       </section>
       {stepIndex > 0 && (
         <div className="flex justify-between px-2 py-4">
-          <Button onClick={previousIndex}>Previous</Button>
-          <Button onClick={nextIndex}>Next</Button>
+          <Button variant="outline" onClick={previousIndex}>
+            Previous
+          </Button>
+          {stepIndex === 4 ? (
+            <ConfirmationModal onClick={finishDemo} />
+          ) : (
+            <Button onClick={nextIndex}>Next</Button>
+          )}
         </div>
       )}
     </main>
